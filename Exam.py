@@ -23,6 +23,7 @@ class ExamApp(Tk):
         self.file_menu.add_command(label="View Users", command=self.list_users)
         self.file_menu.add_command(label="Exit", command=self.quit)
         self.admin_menu.add_command(label="Add/Edit/Remove User", command=self.admin_users)
+        self.admin_menu.add_command(label="Create Exam", command=self.create_exam)
 
     def exit(self):
         self.quit()
@@ -102,6 +103,88 @@ class ExamApp(Tk):
 
     def take_exam(self): pass
 
+    def create_exam(self):
+        self.hide_frames()
+        self.new_exam_frame = Frame(self, style="BW.TFrame")
+        self.exam_name_str = StringVar()
+        self.exam_name_label = Label(self.new_exam_frame, style="BW.TLabel", text="Please enter name of the exam.")
+        self.exam_name = Entry(self.new_exam_frame, textvariable=self.exam_name_str)
+        self.q_label = Label(self.new_exam_frame, style="BW.TLabel", text="Please enter question text:")
+        self.q_str = StringVar
+        self.q_input = Entry(self.new_exam_frame, textvariable=self.q_str)
+        self.q_type_str = StringVar()
+        self.q_radio_str = IntVar()
+        self.q_radio_str.set(2)
+        self.q_radio = {}
+        self.q_radio[0] = Radiobutton(self.new_exam_frame, text="True/False", variable=self.q_radio_str,
+                                      value=0, command=self.new_exam_TF)
+        self.q_radio[1] = Radiobutton(self.new_exam_frame, text="Multiple Choice", variable=self.q_radio_str,
+                                      value=1, command=self.new_exam_MC)
+        self.q_radio[2] = Radiobutton(self.new_exam_frame, text="Fill in the Blank", variable=self.q_radio_str,
+                                      value=2, command=self.new_exam_FIB)
+        self.new_exam_frame.pack()
+        self.exam_name_label.grid(row=1, column=1, rowspan=1, columnspan=2)
+        self.exam_name.grid(row=2, rowspan=2, column=1, columnspan=2)
+        self.q_label.grid(row=4, rowspan=1, column=1, columnspan=2)
+        self.q_input.grid(row=5, column=1, columnspan=2)
+        self.q_radio[0].grid(row=1, column=3)
+        self.q_radio[1].grid(row=1, column=4)
+        self.q_radio[2].grid(row=1, column=5)
+        self.new_exam_FIB()
+
+    def hide_ques_input(self):
+        try:
+            if self.ques_FIB_lbl.winfo_exists():
+                self.ques_FIB_lbl.destroy()
+        except AttributeError: pass
+        try:
+            if self.ques_FIB.winfo_exists():
+                self.ques_FIB.destroy()
+        except AttributeError: pass
+        try:
+            for i in self.ques_multic_lbl:
+                if i.winfo_exists():
+                    i.destroy()
+        except AttributeError: pass
+        except IndexError: pass
+        try:
+            for i in self.ques_multic_input:
+                if i.winfo_exists():
+                    i.destroy()
+        except AttributeError: pass
+        except IndexError: pass
+
+    def new_exam_TF(self):
+        self.hide_ques_input()
+
+    def new_exam_MC(self):
+        self.hide_ques_input()
+        self.ques_multic_lbl = {}
+        self.ques_multic_input = {}
+        self.ques_multic_str = {}
+        self.ques_multic_limit = 5
+        if self.ques_multic_limit > 0 & self.ques_multic_limit < 10:
+            tmp = 0
+            while tmp < self.ques_multic_limit:
+                self.ques_multic_str[tmp] = StringVar()
+                self.ques_multic_lbl[tmp] = Label(self.new_exam_frame, style="BW.TLabel",
+                                                  text="Answer number " + str(tmp+1) + ":")
+                self.ques_multic_input[tmp] = Entry(self.new_exam_frame, textvariable=self.ques_multic_str[tmp])
+                tmp = tmp+1
+        for i in range(self.ques_multic_limit):
+            print(i)
+            self.ques_multic_lbl[i].grid(row=i+2, column=3, columnspan=2)
+            self.ques_multic_input[i].grid(row=i+2, column=5, columnspan=2)
+
+
+    def new_exam_FIB(self):
+        self.hide_ques_input()
+        self.ques_FIB_lbl = Label(self.new_exam_frame, style="BW.TLabel", text="Enter the correct answer")
+        self.ques_FIB_str = StringVar()
+        self.ques_FIB = Entry(self.new_exam_frame, textvariable=self.ques_FIB_str)
+        self.ques_FIB_lbl.grid(row=2, column=3, columnspan=2)
+        self.ques_FIB.grid(row=3, column=3, columnspan=2)
+
     def hide_frames(self):
         try:
             if self.users_frame.winfo_exists():
@@ -114,4 +197,8 @@ class ExamApp(Tk):
         try:
             if self.admin_frame.winfo_exists():
                 self.admin_frame.pack_forget()
+        except AttributeError: pass
+        try:
+            if self.new_exam_frame.winfo_exists():
+                self.new_exam_frame.pack_forget()
         except AttributeError: pass
