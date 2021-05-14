@@ -112,7 +112,6 @@ class ExamApp(Tk):
         self.q_label = Label(self.new_exam_frame, style="BW.TLabel", text="Please enter question text:")
         self.q_str = StringVar
         self.q_input = Entry(self.new_exam_frame, textvariable=self.q_str)
-        self.q_type_str = StringVar()
         self.q_radio_str = IntVar()
         self.q_radio_str.set(2)
         self.q_radio = {}
@@ -142,17 +141,25 @@ class ExamApp(Tk):
                 self.ques_FIB.destroy()
         except AttributeError: pass
         try:
-            for i in self.ques_multic_lbl:
-                if i.winfo_exists():
-                    i.destroy()
+            for i in range(len(self.ques_multic_lbl)):
+                if self.ques_multic_lbl[i].winfo_exists():
+                    self.ques_multic_lbl[i].destroy()
         except AttributeError: pass
         except IndexError: pass
         try:
-            for i in self.ques_multic_input:
-                if i.winfo_exists():
-                    i.destroy()
+            for i in range(len(self.ques_multic_input)):
+                if self.ques_multic_input[i].winfo_exists():
+                    self.ques_multic_input[i].destroy()
         except AttributeError: pass
         except IndexError: pass
+        try:
+            if self.ans_limit_lbl.winfo_exists():
+                self.ans_limit_lbl.destroy()
+        except AttributeError: pass
+        try:
+            if self.ans_limit_opt.winfo_exists():
+                self.ans_limit_opt.destroy()
+        except AttributeError: pass
 
     def new_exam_TF(self):
         self.hide_ques_input()
@@ -162,7 +169,32 @@ class ExamApp(Tk):
         self.ques_multic_lbl = {}
         self.ques_multic_input = {}
         self.ques_multic_str = {}
-        self.ques_multic_limit = 5
+        self.ans_limit_lbl = Label(self.new_exam_frame, style="BW.TLabel", text="Answer count:")
+        self.ans_limit_var = [2, 2, 3, 4, 5]
+        self.ans_limit = IntVar()
+        self.ans_limit.set(3)
+        # Option menu only allows positional values, poorly implement, can't specific arguement name
+        self.ans_limit_opt = OptionMenu(self.new_exam_frame, self.ans_limit, *self.ans_limit_var,
+                                        command=self.update_new_exam_mc)
+        self.ans_limit_lbl.grid(row=6, column=1)
+        self.ans_limit_opt.grid(row=6, column=2)
+        self.save_exam_mc = Button(self.new_exam_frame, text="Save question", command=self.save_to_exam_mc)
+        self.save_exam_mc.grid(row=7, column=4)
+
+    def update_new_exam_mc(self, opt):
+        try:
+            for i in range(len(self.ques_multic_lbl)):
+                if self.ques_multic_lbl[i].winfo_exists():
+                    self.ques_multic_lbl[i].destroy()
+        except AttributeError: pass
+        except IndexError: pass
+        try:
+            for i in range(len(self.ques_multic_input)):
+                if self.ques_multic_input[i].winfo_exists():
+                    self.ques_multic_input[i].destroy()
+        except AttributeError: pass
+        except IndexError: pass
+        self.ques_multic_limit = self.ans_limit.get()
         if self.ques_multic_limit > 0 & self.ques_multic_limit < 10:
             tmp = 0
             while tmp < self.ques_multic_limit:
@@ -184,6 +216,8 @@ class ExamApp(Tk):
         self.ques_FIB = Entry(self.new_exam_frame, textvariable=self.ques_FIB_str)
         self.ques_FIB_lbl.grid(row=2, column=3, columnspan=2)
         self.ques_FIB.grid(row=3, column=3, columnspan=2)
+
+    def save_to_exam_mc(self): pass
 
     def hide_frames(self):
         try:
