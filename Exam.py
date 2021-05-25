@@ -105,30 +105,37 @@ class ExamApp(Tk):
 
     def create_exam(self):
         self.hide_frames()
+        self.ques_count = 0
         self.new_exam_frame = Frame(self, style="BW.TFrame")
+        self.exam = [['exam title '], []]
         self.exam_name_str = StringVar()
         self.exam_name_label = Label(self.new_exam_frame, style="BW.TLabel", text="Please enter name of the exam.")
         self.exam_name = Entry(self.new_exam_frame, textvariable=self.exam_name_str)
+        self.ques_count_lbl = Label(self.new_exam_frame, style="BW.TLabel", text="Question #: " +
+                                                                                 str(self.ques_count + 1))
         self.q_label = Label(self.new_exam_frame, style="BW.TLabel", text="Please enter question text:")
         self.q_str = StringVar
-        self.q_input = Entry(self.new_exam_frame, textvariable=self.q_str)
+        self.q_input = Entry(self.new_exam_frame, textvariable=self.q_str, width=20)
         self.q_radio_str = IntVar()
         self.q_radio_str.set(2)
         self.q_radio = {}
         self.q_radio[0] = Radiobutton(self.new_exam_frame, text="True/False", variable=self.q_radio_str,
-                                      value=0, command=self.new_exam_TF)
+                                      value=0, command=self.new_exam_tf)
         self.q_radio[1] = Radiobutton(self.new_exam_frame, text="Multiple Choice", variable=self.q_radio_str,
                                       value=1, command=self.new_exam_MC)
         self.q_radio[2] = Radiobutton(self.new_exam_frame, text="Fill in the Blank", variable=self.q_radio_str,
                                       value=2, command=self.new_exam_FIB)
+        self.finished = Button(self.new_exam_frame, style="BW.TButton", text="Finished", command=self.exam_to_db)
         self.new_exam_frame.pack()
         self.exam_name_label.grid(row=1, column=1, rowspan=1, columnspan=2)
-        self.exam_name.grid(row=2, rowspan=2, column=1, columnspan=2)
+        self.exam_name.grid(row=2, column=1, columnspan=2)
+        self.ques_count_lbl.grid(row=3, column=1)
         self.q_label.grid(row=4, rowspan=1, column=1, columnspan=2)
         self.q_input.grid(row=5, column=1, columnspan=2)
         self.q_radio[0].grid(row=1, column=3)
         self.q_radio[1].grid(row=1, column=4)
         self.q_radio[2].grid(row=1, column=5)
+        self.finished.grid(row=7, column=5)
         self.new_exam_FIB()
 
     def hide_ques_input(self):
@@ -160,9 +167,58 @@ class ExamApp(Tk):
             if self.ans_limit_opt.winfo_exists():
                 self.ans_limit_opt.destroy()
         except AttributeError: pass
+        try:
+            if self.save_ques_FIB_btn.winfo_exists():
+                self.save_ques_FIB_btn.destroy()
+        except AttributeError: pass
+        try:
+            if self.save_exam_mc.winfo_exists():
+                self.save_exam_mc.destroy()
+        except AttributeError: pass
+        try:
+            if self.true_radio.winfo_exists():
+                self.true_radio.destroy()
+        except AttributeError: pass
+        try:
+            if self.false_radio.winfo_exists():
+                self.false_radio.destroy()
+        except AttributeError: pass
 
-    def new_exam_TF(self):
+    def convert_exam_title(self):
+        try:
+            if self.exam_name.winfo_exists():
+                exam_title = self.exam_name.get()
+                if exam_title.isalpha():
+                    self.ques_count += 1
+                    self.exam[1].append(exam_title)
+                    self.exam_name_label.grid_forget()
+                    self.exam_name.grid_forget()
+                    self.exam_name_label = Label(self.new_exam_frame, style="BW.TLabel", text="Exam Title: " +
+                                                 exam_title)
+                    self.exam_name_label.grid(row=1, column=1, columnspan=2)
+        except AttributeError:
+            pass
+
+    def new_exam_tf(self):
         self.hide_ques_input()
+        self.TF_str = StringVar()
+        self.TF_str.set("true")
+        self.true_radio = Radiobutton(self.new_exam_frame, text="True", variable=self.TF_str, value="true")
+        self.false_radio = Radiobutton(self.new_exam_frame, text="False", variable=self.TF_str, value="false")
+        self.save_tf = Button(self.new_exam_frame, style="BW.TButton", text="Save", command=self.save_to_exam_tf)
+        self.true_radio.grid(row=3, column=3)
+        self.false_radio.grid(row=4, column=3)
+        self.save_tf.grid(row=7, column=3)
+
+    def save_to_exam_tf(self):
+        self.convert_exam_title()
+        self.exam[0].append("TF question " + str(self.ques_count))
+        self.exam[1].append("question " + self.q_input.get())
+        self.exam[0].append("TF answer " + str(self.ques_count))
+        self.exam[1].append("answer " + self.TF_str.get())
+        self.save_success_tf = tkinter.messagebox.Message(self.new_exam_frame, title="Saved",
+                                                          message="Question has been saved!")
+        self.save_success_tf.show()
 
     def new_exam_MC(self):
         self.hide_ques_input()
@@ -208,16 +264,38 @@ class ExamApp(Tk):
             self.ques_multic_lbl[i].grid(row=i+2, column=3, columnspan=2)
             self.ques_multic_input[i].grid(row=i+2, column=5, columnspan=2)
 
+    def save_to_exam_mc(self):
+        exam_title = str()
+        try:
+            # add a check to see weather input fields are empty
+            self.exam[0].append("MC question " + str(self.ques_count))
+            self.exam[1].append("question " + self.q_input.get())
+            for i in self.ques_multic_input:
+                self.exam[0].append("MC answer " + str(self.ques_count))
+                self.exam[1].append("answer " + str(i) + ' ' + str(self.ques_multic_input[i].get()))
+            for j in self.exam[0]:
+                print(j)
+            for k in self.exam[1]:
+                print(k)
+            confirmMsg = tkinter.messagebox.Message(self.new_exam_frame, title="Saved", message="Question has been saved")
+            confirmMsg.show()
+            self.update_new_exam_mc()
+
+        except AttributeError as z:
+            print(z)
 
     def new_exam_FIB(self):
         self.hide_ques_input()
         self.ques_FIB_lbl = Label(self.new_exam_frame, style="BW.TLabel", text="Enter the correct answer")
         self.ques_FIB_str = StringVar()
         self.ques_FIB = Entry(self.new_exam_frame, textvariable=self.ques_FIB_str)
+        self.save_ques_FIB_btn = Button(self.new_exam_frame, style="BW.TButton", text="Add question to exam")
         self.ques_FIB_lbl.grid(row=2, column=3, columnspan=2)
         self.ques_FIB.grid(row=3, column=3, columnspan=2)
+        self.save_ques_FIB_btn.grid(row=4, column=4)
 
-    def save_to_exam_mc(self): pass
+    def exam_to_db(self):
+        self.DB.save_exam(self.exam)
 
     def hide_frames(self):
         try:
