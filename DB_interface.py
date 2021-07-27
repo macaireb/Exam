@@ -18,6 +18,13 @@ class DB_interface():
         conn.commit()
         conn.close()
 
+    def remove_user(self, fn, ln):
+        conn = sqlite3.connect("storage.db")
+        cur = conn.cursor()
+        cur.execute("DELETE FROM users WHERE fname = ? AND lname = ?", (fn, ln))
+        conn.commit()
+        conn.close()
+
     def save_exam(self, exam):
         conn = sqlite3.connect("storage.db")
         cur = conn.cursor()
@@ -27,7 +34,7 @@ class DB_interface():
         for i in range(len(exam[0])):
             ques = exam[0][i].split() + exam[1][i].split()
             print("Inserting " + exam[0][i] + exam[1][i])
-            cur.execute("INSERT INTO " + exam[1][0] + '_Test VALUES (?, ?, ?, ?)', (ques[0], ques[1], ques[2], ques[-1]))
+            cur.execute("INSERT INTO " + exam[1][0] + '_Test VALUES (?, ?, ?, ?)', (ques[0], ques[1], ques[2], ' '.join(ques[3:])))
         conn.commit()
         conn.close()
 

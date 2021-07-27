@@ -100,62 +100,90 @@ class ExamApp(Tk):
                 self.admin_user_list = Listbox(self.admin_frame, listvariable=self.admin_str_users, height=15)
                 self.admin_user_list.grid(row=1, rowspan=4, column=1, columnspan=2)
 
-    def remove_user(self): pass
+    def remove_user(self):
+        selection = self.admin_user_list.curselection()
+        index = selection[0]
+        value = self.admin_user_list.get(index)
+        print("The item being removed is: " + value[0] + ' ' + value[1])
+        self.DB.remove_user(value[0], value[1])
+        if self.admin_user_list.winfo_exists():
+            self.admin_user_list.destroy()
+            self.admin_str_users = StringVar(value=self.DB.get_users())
+            self.admin_user_list = Listbox(self.admin_frame, listvariable=self.admin_str_users, height=15)
+            self.admin_user_list.grid(row=1, rowspan=4, column=1, columnspan=2)
 
     def take_exam(self):
         self.current_exam = self.DB.get_single_exam(self.view_exams_list.get(self.view_exams_list.curselection())[0])
         self.hide_frames()
         self.take_exam_frame = Frame(self, style="BW.TFrame")
         self.take_exam_frame.pack()
-        self.take_exam_title = Label(self.take_exam_frame, style="BW.TLabel", text=self.current_exam[0][-1])
+        self.take_exam_title = Label(self.take_exam_frame, style="BW.TLabel", text="Test: " + self.current_exam[0][-2])
         self.take_exam_title.grid(row=1, column=1, columnspan=2)
         self.present_questions()
 
     def present_questions(self):
-        row_place, col_place = 2, 2
-        self.questions_lbls, self.ans_str_entry_vars, self.ans_str_entries, self.ans_str_radio_vars, self.ans_radios =\
-            [], [], [], [], []
-        for i in range(5):
-            mc_ans_absent = True
-            mc_ques_count = 0
-            if len(self.current_exam) > 1:
-                current_question = self.current_exam.pop()
-                if current_question[0] == 'MC':
-                    print("line is multiple choice")
-                    if current_question[1] == 'question':
-                        print("Multiple choice line is a question")
-                        self.questions_lbls.append(Label(self.take_exam_frame, style="BW.TLabel",
-                                                         text=current_question[-1]))
-                        self.questions_lbls[-1].grid(row=row_place, column=col_place)
-                        row_place += 1
-                    if current_question[1] == 'answer':
-                        print("Multiple choice line is an answer")
-                        if len(self.ans_str_radio_vars) > 0:
-                            for i in self.ans_str_radio_vars:
-                                if i.get() == current_question[-2]:
-                                    mc_ans_absent = False
-                                    self.ans_radios.append(Radiobutton(self.take_exam_frame, variable=i,
-                                                                text=current_question[-1], value=mc_ques_count))
-                                    mc_ques_count += 1
-                                    self.ans_radios[-1].grid(row=row_place, column=col_place)
-                                    row_place += 1
-                        if mc_ans_absent:
-                            self.ans_str_radio_vars.append(StringVar())
-                            self.ans_str_radio_vars[-1].set(current_question[-2])
-                            self.ans_radios.append(Radiobutton(self.take_exam_frame, variable=i,
-                                                        text=current_question[-1], value=mc_ques_count))
-                            self.ans_radios[-1].grid(row=row_place, column=col_place)
-                            row_place += 1
-
-
-
+        row_place, col_place = 2, 1
+        self.questions_lbls, self.ans_str_entry_vars, self.ans_entries, self.ans_str_radio_vars =\
+            [], [], [], []
+        self.exam_questions = []
+        self.ans_radios = []
+        mc_ans_var_present = True
+        mc_ques_count, mc_ans_end, mc_ans_begin = 0, 0, 0
+        for i in range(len(self.current_exam)):
+            current_question = self.current_exam.pop()
+            if current_question[0] + current_question[1] == 'examtitle':
+                break
+            self.exam_questions.append(current_question)
+            if current_question[0] + current_question[1] == 'MCquestion':
+                mc_ans_var_present = True
+                self.questions_lbls.append(Label(self.take_exam_frame, style="BW.TLabel",
+                                                 text="Question: " + current_question[3]))
+                self.questions_lbls[-1].grid(row=row_place, column=col_place)
+                row_place +=1
+                for j in range(len(self.ans_radios[mc_ans_begin:])):
+                    self.ans_radios[mc_ans_begin+j].grid(row=row_place, column=col_place)
+                    row_place += 1
+                mc_ans_begin = mc_ans_end
+            if current_question[0] + current_question[1] == 'MCanswer':
+                if mc_ans_var_present:
+                    self.ans_str_radio_vars.append(StringVar())
+                    mc_ans_var_present = False
+                # Need to add a value parameter assignment so that I can later evaluate question for correct answer
+                self.ans_radios.append(Radiobutton(self.take_exam_frame, variable=self.ans_str_radio_vars[-1],
+                                                   text=current_question[3][8:], value=mc_ans_end))
+                mc_ans_end += 1
+            if current_question[0] + current_question[1] == 'TFquestion':
+                self.questions_lbls.append(Label(self.take_exam_frame, style="BW.TLabel",
+                                                 text="Question: " + current_question[3]))
+                self.ans_str_radio_vars.append(StringVar())
+                self.ans_radios.append(Radiobutton(self.take_exam_frame, variable=self.ans_str_radio_vars[-1],
+                                                   text="False", value="false"))
+                self.ans_radios.append(Radiobutton(self.take_exam_frame, variable=self.ans_str_radio_vars[-1],
+                                                   text="True", value="true"))
+                mc_ans_end += 2
+                self.questions_lbls[-1].grid(row=row_place, column=col_place)
+                row_place += 1
+                self.ans_radios[-1].grid(row=row_place, column=col_place)
+                row_place += 1
+                self.ans_radios[-2].grid(row=row_place, column=col_place)
+                row_place += 1
+                mc_ans_begin = mc_ans_end
+            if current_question[0] + current_question[1] == 'FIBquestion':
+                self.questions_lbls.append(Label(self.take_exam_frame, style="BW.TLabel",
+                                                 text="Question: " + current_question[3]))
+                self.ans_str_entry_vars.append(StringVar())
+                self.ans_entries.append(Entry(self.take_exam_frame, textvariable=self.ans_str_entry_vars[-1]))
+                self.questions_lbls[-1].grid(row=row_place, column=col_place)
+                row_place += 1
+                self.ans_entries[-1].grid(row=row_place, column=col_place)
+                row_place += 1
 
 
     def create_exam(self):
         self.hide_frames()
         self.ques_count = 0
         self.new_exam_frame = Frame(self, style="BW.TFrame")
-        self.exam = [['exam title '], []]
+        self.exam = ['exam title '], []
         self.exam_name_str = StringVar()
         self.exam_name_label = Label(self.new_exam_frame, style="BW.TLabel", text="Please enter name of the exam.")
         self.exam_name = Entry(self.new_exam_frame, textvariable=self.exam_name_str)
@@ -236,13 +264,27 @@ class ExamApp(Tk):
                 self.save_tf.destroy()
         except AttributeError: pass
 
+    def update_question_count_lbl(self):
+        try:
+            if self.ques_count_lbl.winfo_exists():
+                self.ques_count_lbl.destroy()
+                self.ques_count_lbl = Label(self.new_exam_frame, style="BW.TLabel", text="Question #: " +
+                                                                                         str(self.ques_count))
+                self.ques_count_lbl.grid(row=3, column=1)
+        except AttributeError: pass
+
     def convert_exam_title(self):
         self.ques_count += 1
         try:
             if self.exam_name.winfo_exists():
+                print("Exam title exists")
                 exam_title = self.exam_name.get()
-
+                print("Exam title is " + self.exam_name.get())
                 self.exam[1].append(exam_title)
+                self.exam_name.destroy()
+                print("Exam name entry widget destroyed")
+            if self.exam_name_label.winfo_exists():
+                self.exam_name_label.destroy()
                 self.exam_name_label = Label(self.new_exam_frame, style="BW.TLabel", text="Exam Title: " +
                                              exam_title)
                 self.exam_name_label.grid(row=1, column=1, columnspan=2)
@@ -251,12 +293,12 @@ class ExamApp(Tk):
                 self.ques_count_lbl = Label(self.new_exam_frame, style="BW.TLabel", text="Question #: " +
                                                                                          str(self.ques_count + 1))
                 self.ques_count_lbl.grid(row=3, column=1)
-        except AttributeError:
-            pass
-
+        except AttributeError as z:
+            print(z)
 
     def new_exam_tf(self):
         self.hide_ques_input()
+        self.update_question_count_lbl()
         self.redraw_question()
         self.TF_str = StringVar()
         self.TF_str.set("true")
@@ -268,7 +310,8 @@ class ExamApp(Tk):
         self.save_tf.grid(row=7, column=3)
 
     def save_to_exam_tf(self):
-        self.convert_exam_title()
+        if self.exam_name.winfo_exists():
+            self.convert_exam_title()
         self.exam[0].append("TF question " + str(self.ques_count))
         self.exam[1].append(" question " + self.q_input.get())
         self.exam[0].append("TF answer " + str(self.ques_count))
@@ -277,9 +320,11 @@ class ExamApp(Tk):
                                                           message="Question has been saved!")
         self.save_success_tf.show()
         self.new_exam_tf()
+        self.ques_count += 1
 
     def new_exam_MC(self):
         self.hide_ques_input()
+        self.update_question_count_lbl()
         self.redraw_question()
         self.ques_multic_lbl = {}
         self.ques_multic_input = {}
@@ -296,7 +341,7 @@ class ExamApp(Tk):
         self.save_exam_mc = Button(self.new_exam_frame, text="Save question", command=self.save_to_exam_mc)
         self.save_exam_mc.grid(row=7, column=4)
 
-    def update_new_exam_mc(self):
+    def update_new_exam_mc(self, opt=None):
         try:
             for i in range(len(self.ques_multic_lbl)):
                 if self.ques_multic_lbl[i].winfo_exists():
@@ -309,6 +354,10 @@ class ExamApp(Tk):
                     self.ques_multic_input[i].destroy()
         except AttributeError: pass
         except IndexError: pass
+        try:
+            if self.q_input.winfo_exists():
+                self.q_input.delete(0, 'end')
+        except AttributeError: pass
         self.ques_multic_limit = self.ans_limit.get()
         if self.ques_multic_limit > 0 & self.ques_multic_limit < 10:
             tmp = 0
@@ -326,10 +375,15 @@ class ExamApp(Tk):
     def save_to_exam_mc(self):
         exam_title = str()
         try:
+            if self.exam_name.winfo_exists():
+                self.convert_exam_title()
+        except AttributeError: pass
+        try:
             # add a check to see weather input fields are empty
             self.exam[0].append("MC question " + str(self.ques_count))
             self.exam[1].append(" question " + self.q_input.get())
             for i in self.ques_multic_input:
+                print("Appending answer number: " + str(i))
                 self.exam[0].append("MC answer " + str(self.ques_count))
                 self.exam[1].append(" answer " + str(i) + ' ' + str(self.ques_multic_input[i].get()))
             for j in self.exam[0]:
@@ -339,12 +393,14 @@ class ExamApp(Tk):
             confirmMsg = tkinter.messagebox.Message(self.new_exam_frame, title="Saved", message="Question has been saved")
             confirmMsg.show()
             self.update_new_exam_mc()
+            self.ques_count += 1
 
         except AttributeError as z:
             print(z)
 
     def new_exam_FIB(self):
         self.hide_ques_input()
+        self.update_question_count_lbl()
         self.redraw_question()
         self.ans_FIB_lbl = Label(self.new_exam_frame, style="BW.TLabel", text="Enter the correct answer")
         self.ans_FIB_str = StringVar()
@@ -356,7 +412,8 @@ class ExamApp(Tk):
         self.save_ques_FIB_btn.grid(row=4, column=4)
 
     def save_to_exam_fib(self):
-        self.convert_exam_title()
+        if self.exam_name.winfo_exists():
+            self.convert_exam_title()
         self.exam[0].append("FIB question " + str(self.ques_count))
         self.exam[1].append(" question " + self.q_input.get())
         self.exam[0].append("FIB answer " + str(self.ques_count))
@@ -365,6 +422,7 @@ class ExamApp(Tk):
                                                           message="Question has been saved!")
         self.save_success_tf.show()
         self.new_exam_FIB()
+        self.ques_count += 1
 
     def exam_to_db(self):
         self.DB.save_exam(self.exam)
@@ -394,4 +452,8 @@ class ExamApp(Tk):
         try:
             if self.new_exam_frame.winfo_exists():
                 self.new_exam_frame.pack_forget()
+        except AttributeError: pass
+        try:
+            if self.take_exam_frame.winfo_exists():
+                self.take_exam_frame.pack_forget()
         except AttributeError: pass
