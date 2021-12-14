@@ -252,8 +252,10 @@ class ExamApp(Tk):
                     self.questions_text_radio[previous_q_count].grid(row=previous_q_count, column=1)
                     previous_q_count += 1
                     print("Question count should be: " + str(previous_q_count ))
-            self.delete_question = Button(self.current_quests_inner, text = "Delete", command=self.pop_question)
+            self.delete_question = Button(self.current_quests_inner, text="Delete", command=self.pop_question)
             self.delete_question.grid(row=previous_q_count+1, column=1)
+            self.edit_question_btn = Button(self.current_quests_inner, text="Edit", command=self.edit_question)
+            self.edit_question_btn.grid(row=previous_q_count+1, column=2)
 
     def redraw_exam_current_questions(self):
         print("Attempting to redraw the previous questions widget")
@@ -296,7 +298,34 @@ class ExamApp(Tk):
                     if j.cget("value") == self.questions_radio_str.get():
                         print(j.cget("text"))
 
+    def edit_question(self):
+        n = self.questions_radio_str.get()
+        if self.exam[0][n][0:2] == 'MC':
+            print("This is a multiple choice question")
+        elif self.exam[0][n][0:2] == 'TF':
+            print(self.exam[1][n+1].split(' ')[-1])
+            self.edit_tf(self.exam[1][n][10:], self.exam[1][n+1].split(' ')[-1], self.exam[0][n][-1])
 
+    def edit_tf(self,quest, answ, count):
+        self.set_question_count_lbl(count)
+        self.hide_ques_input()
+        try:
+            if self.q_input.winfo_exists():
+                self.q_input.destroy()
+                self.q_str = StringVar()
+                self.q_str.set(quest)
+                self.q_input = Entry(self.new_exam_frame, textvariable=self.q_str, width=20)
+                self.q_input.grid(row=5, column=1, columnspan=2)
+        except AttributeError: pass
+        self.TF_str = StringVar()
+        self.TF_str.set(answ)
+        self.true_radio = Radiobutton(self.new_exam_frame, text="True", variable=self.TF_str, value="true")
+        self.false_radio = Radiobutton(self.new_exam_frame, text="False", variable=self.TF_str, value="false")
+        self.save_tf = Button(self.new_exam_frame, style="BW.TButton", text="Save", command=self.save_to_exam_tf)
+        self.true_radio.grid(row=3, column=3)
+        self.false_radio.grid(row=4, column=3)
+        self.save_tf.grid(row=7, column=3)
+        self.pop_question()
 
     def hide_ques_input(self):
         try:
@@ -356,6 +385,16 @@ class ExamApp(Tk):
                                                                                          str(self.ques_count))
                 self.ques_count_lbl.grid(row=3, column=1)
         except AttributeError: pass
+
+    def set_question_count_lbl(self, count):
+        try:
+            if self.ques_count_lbl.winfo_exists():
+                self.ques_count_lbl.destroy()
+                self.ques_count_lbl = Label(self.new_exam_frame, style="BW.TLabel", text="Question #: " +
+                                                                                         str(count))
+                self.ques_count_lbl.grid(row=3, column=1)
+        except AttributeError:
+            pass
 
     def convert_exam_title(self):
         try:
