@@ -247,10 +247,13 @@ class ExamApp(Tk):
                     question_text = question_text[10:]
                     print("2x: " + question_text)
                     self.questions_text_radio.append(Radiobutton(self.current_quests_inner, text=question_text,
-                                                             variable=self.questions_radio_str, value=i))
-                    print("Question count should be: " + str(previous_q_count))
+                                                             variable=self.questions_radio_str, value=i,
+                                                                 command=self.draw_expand_previous_question))
                     self.questions_text_radio[previous_q_count].grid(row=previous_q_count, column=1)
-                    previous_q_count+= 1
+                    previous_q_count += 1
+                    print("Question count should be: " + str(previous_q_count ))
+            self.delete_question = Button(self.current_quests_inner, text = "Delete", command=self.pop_question)
+            self.delete_question.grid(row=previous_q_count+1, column=1)
 
     def redraw_exam_current_questions(self):
         print("Attempting to redraw the previous questions widget")
@@ -264,6 +267,35 @@ class ExamApp(Tk):
                 self.quests_scroll.destroy()
         except AttributeError: pass
         self.draw_exam_current_questions(self.new_exam_frame)
+
+    def get_next_quest_index(self):
+        for i in self.exam[1][self.questions_radio_str.get()+1:]:
+            if i[1:9] == "question":
+                print("Next questions index is: " + str(self.exam[1].index(i)))
+                print(i)
+                return self.exam[1].index(i)
+
+    def pop_question(self):
+        self.ques_count -= 1
+        for j in self.exam[1]:
+            print(j)
+        for i in self.exam[0][self.questions_radio_str.get() : self.get_next_quest_index()]:
+            print("Deleteing: " + i)
+            self.exam[0].pop(self.exam[0].index(i))
+        for k in self.exam[1][self.questions_radio_str.get() : self.get_next_quest_index()]:
+            print("Deleteing: " + k)
+            self.exam[1].pop(self.exam[1].index(k))
+        self.redraw_exam_current_questions()
+
+    def draw_expand_previous_question(self):
+        for i in range(len(self.exam[1])):
+            line = self.exam[1][i]
+            if line[1:9] == "question" and self.questions_radio_str.get() == i:
+                print("Exam index is: " + str(i))
+                for j in self.questions_text_radio:
+                    if j.cget("value") == self.questions_radio_str.get():
+                        print(j.cget("text"))
+
 
 
     def hide_ques_input(self):
@@ -326,7 +358,6 @@ class ExamApp(Tk):
         except AttributeError: pass
 
     def convert_exam_title(self):
-        self.ques_count += 1
         try:
             if self.exam_name.winfo_exists():
                 print("Exam title exists")
@@ -425,6 +456,8 @@ class ExamApp(Tk):
             print(i)
             self.ques_multic_lbl[i].grid(row=i+2, column=3)
             self.ques_multic_input[i].grid(row=i+2, column=4, columnspan=2)
+        self.redraw_question()
+        self.redraw_exam_current_questions()
 
     def save_to_exam_mc(self):
         exam_title = str()
@@ -435,7 +468,7 @@ class ExamApp(Tk):
         try:
             # add a check to see weather input fields are empty
             self.exam[0].append("MC question " + str(self.ques_count))
-            self.exam[1].append(" question " + self.q_input.get())
+            self.exam[1].append(" question " + self.q_str.get())
             for i in self.ques_multic_input:
                 print("Appending answer number: " + str(i))
                 self.exam[0].append("MC answer " + str(self.ques_count))
